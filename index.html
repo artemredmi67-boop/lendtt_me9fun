@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Continue</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+
+    background-image: url("https://i.ibb.co/DPj9WQsZ/photo-2025-12-29-21-23-40.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* затемнение + blur */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+}
+
+.container {
+    width: 100%;
+    max-width: 360px;
+    padding: 24px;
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+}
+
+h1 {
+    font-size: 22px;
+    margin-bottom: 22px;
+    color: #fff;
+}
+
+.buttons {
+    display: none;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 18px;
+    font-size: 18px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 14px;
+    animation: pulse 1.4s infinite;
+}
+
+.meet {
+    background: linear-gradient(135deg, #ff4d6d, #ff7a18);
+}
+
+.telegram {
+    background: #229ED9;
+}
+
+.whatsapp {
+    background: #25D366;
+}
+
+.icon {
+    width: 22px;
+    height: 22px;
+    fill: #fff;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255,255,255,0.35);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 14px rgba(255,255,255,0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255,255,255,0);
+    }
+}
+
+.note {
+    font-size: 13px;
+    color: #eee;
+    margin-top: 10px;
+}
+</style>
+
+<script>
+const texts = {
+    en: {
+        title: "Choose how to continue",
+        meet: "Meet now",
+        tg: "Telegram",
+        wa: "WhatsApp",
+        note: "Tap the button to continue",
+        blocked: "Open this link in TikTok app"
+    },
+    ru: {
+        title: "Выберите, как продолжить",
+        meet: "Познакомиться",
+        tg: "Telegram",
+        wa: "WhatsApp",
+        note: "Нажмите кнопку, чтобы продолжить",
+        blocked: "Откройте ссылку в приложении TikTok"
+    }
+};
+
+const lang = navigator.language.startsWith('ru') ? 'ru' : 'en';
+const ua = navigator.userAgent || "";
+
+/* детект */
+const isTikTok = /TikTok/i.test(ua);
+const isAndroid = /Android/i.test(ua);
+const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+/* боты */
+const isBot = /bot|crawl|spider|preview|TikTokBot|Bytespider/i.test(ua);
+
+/* открытие во внешнем браузере */
+function openExternal(url) {
+    window.location.href = url;
+}
+
+window.onload = () => {
+    document.getElementById('title').innerText = texts[lang].title;
+    document.getElementById('meetText').innerText = texts[lang].meet;
+    document.getElementById('tgText').innerText = texts[lang].tg;
+    document.getElementById('waText').innerText = texts[lang].wa;
+
+    if (isBot) return;
+
+    if (isTikTok && (isAndroid || isIOS)) {
+        document.querySelector('.buttons').style.display = 'block';
+        document.getElementById('note').innerText = texts[lang].note;
+    } else {
+        document.getElementById('note').innerText = texts[lang].blocked;
+    }
+};
+</script>
+</head>
+
+<body>
+<div class="container">
+    <h1 id="title"></h1>
+
+    <div class="buttons">
+        <!-- MEET -->
+        <a class="btn meet"
+           href="https://grzvkg.datewiithyou.net/?utm_source=da57dc555e50572d&ban=tiktok&j1=1&s1=212364&s2=2182631"
+           onclick="openExternal(this.href); return false;">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M12 21s-6.7-4.35-9.5-7.15A5.9 5.9 0 0112 4.6a5.9 5.9 0 019.5 9.25C18.7 16.65 12 21 12 21z"/>
+            </svg>
+            <span id="meetText"></span>
+        </a>
+
+        <!-- TELEGRAM -->
+        <a class="btn telegram"
+           href="https://t.me/me9fun"
+           onclick="openExternal(this.href); return false;">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M9.04 15.47l-.39 5.52c.56 0 .8-.24 1.1-.53l2.64-2.5 5.47 4c1 .55 1.7.26 1.95-.92l3.54-16.6c.32-1.5-.54-2.08-1.52-1.7L1.6 9.37c-1.46.56-1.44 1.36-.26 1.72l5.56 1.73L19.8 5.37c.7-.43 1.35-.2.82.23"/>
+            </svg>
+            <span id="tgText"></span>
+        </a>
+
+        <!-- WHATSAPP -->
+        <a class="btn whatsapp"
+           href="https://whatsapp.com/channel/0029Vb53zUDDJ6H43vLiBc2B"
+           onclick="openExternal(this.href); return false;">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M20.52 3.48A11.86 11.86 0 0012.01 0C5.38 0 0 5.38 0 12c0 2.12.55 4.18 1.6 6.01L0 24l6.15-1.6A11.9 11.9 0 0012.01 24C18.63 24 24 18.62 24 12a11.86 11.86 0 00-3.48-8.52z"/>
+            </svg>
+            <span id="waText"></span>
+        </a>
+    </div>
+
+    <div class="note" id="note"></div>
+</div>
+</body>
+</html>
