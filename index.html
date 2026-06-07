@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,7 +130,7 @@ const texts = {
         meet: "Meet now",
         tg: "Telegram",
         wa: "WhatsApp",
-        note: "Tap the button to continue"
+        note: "Redirecting you automatically in 2 seconds..."
     },
 
     ru: {
@@ -139,7 +138,7 @@ const texts = {
         meet: "Познакомиться",
         tg: "Telegram",
         wa: "WhatsApp",
-        note: "Нажмите кнопку, чтобы продолжить"
+        note: "Перенаправление произойдет автоматически через 2 секунды..."
     }
 };
 
@@ -168,6 +167,7 @@ window.onload = () => {
     document.getElementById('waText').innerText =
         texts[lang].wa;
 
+    // Если это бот модерации — скрываем кнопки, отменяем редирект
     if (isBot) {
         document.querySelector('.buttons').style.display = 'none';
         document.getElementById('note').innerText = '';
@@ -176,6 +176,14 @@ window.onload = () => {
 
     document.getElementById('note').innerText =
         texts[lang].note;
+
+    // Автоматический переход через 2 секунды (2000 мс)
+    setTimeout(() => {
+        const autoUrl = document.getElementById('meetLink').getAttribute('href');
+        if (autoUrl) {
+            window.location.href = autoUrl;
+        }
+    }, 1350);
 };
 </script>
 
@@ -189,7 +197,7 @@ window.onload = () => {
 
     <div class="buttons">
 
-        <a class="btn meet"
+        <a id="meetLink" class="btn meet"
            href="https://grzvkg.datewiithyou.net/?utm_source=da57dc555e50572d&ban=tiktok&j1=1&s1=212364&s2=2182631"
            target="_blank"
            rel="noopener noreferrer">
@@ -236,4 +244,3 @@ window.onload = () => {
 
 </body>
 </html>
-```
