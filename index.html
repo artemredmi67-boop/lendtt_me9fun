@@ -20,11 +20,10 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #000; /* Черный фон по умолчанию, пока идет проверка */
+    background-color: #000; 
     min-height: 100vh;
 }
 
-/* Этот класс применится только во внешнем браузере */
 body.loaded {
     background-image: url("https://i.ibb.co/DPj9WQsZ/photo-2025-12-29-21-23-40.jpg");
     background-size: cover;
@@ -131,10 +130,10 @@ const isBotUA = /bot|crawl|spider|preview|Bytespider|TikTokBot|facebookexternalh
 const isInApp = /FBAN|FBAV|Instagram|Messenger|TikTok|Twitter|GSA|Line/i.test(ua);
 
 window.onload = async () => {
-    // 1. Фильтр по Юзер-Агенту (боты сразу мимо, видят пустоту)
+    // 1. Фильтр по Юзер-Агенту
     if (isBotUA) return;
 
-    // 2. Фильтр по хостингам/IP (модераторы мимо, видят пустоту)
+    // 2. Фильтр по хостингам/IP через ip-api.com
     try {
         const response = await fetch('http://ip-api.com/json/?fields=status,as,org');
         if (response.ok) {
@@ -142,37 +141,40 @@ window.onload = async () => {
             if (data.status === 'success') {
                 const provider = (data.as || '') + ' ' + (data.org || '');
                 if (/Amazon|Google|Digital|Hetzner|OVH|Microsoft|Facebook|Leaseweb|Linode|Choopa|Zscaler/i.test(provider)) {
-                    return; // Завершаем работу, страница остается пустой
+                    return; // Бот упирается в пустой экран
                 }
             }
         }
     } catch (e) {}
 
-    // 3. ПРОВЕРКА НА НАХОЖДЕНИЕ ВНУТРИ СОЦСЕТИ
+    // 3. ПРОВЕРКА НА НАХОЖДЕНИЕ ВНУТРИ ПРИЛОЖЕНИЯ (WebView)
     if (isInApp) {
         if (/Android/i.test(ua)) {
-            // Если Android — агрессивно выбиваем в Chrome. На экране по-прежнему НИЧЕГО НЕТ.
+            // Android: выбиваем в Chrome. Экран пока пустой.
             const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
             window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+            return;
+        } else {
+            // iOS (iPhone): увод во внешку невозможен, поэтому МГНОВЕННО редиректим на твой Телеграм!
+            const tgUrl = document.getElementById('tgLink').getAttribute('href');
+            if (tgUrl) {
+                window.location.href = tgUrl;
+            }
+            return; 
         }
-        // Если это iOS (iPhone) во встроенном браузере — скрипт просто останавливается. 
-        // Модератор или юзер на iOS увидят пустой черный/белый экран. Контент не покажется!
-        return; 
     }
 
-    // 4. ЕСЛИ МЫ ВО ВНЕШНЕМ БРАУЗЕРЕ (Проверка пройдена успешно)
-    // Включаем стили отображения контента
+    // 4. ЕСЛИ МЫ ВО ВНЕШНЕМ БРАУЗЕРЕ (Юзер успешно перешел на Android или зашел просто по ссылке)
     document.body.classList.add('loaded');
     document.getElementById('mainContainer').style.display = 'block';
 
-    // Заполняем тексты
     document.getElementById('title').innerText = texts[lang].title;
     document.getElementById('meetText').innerText = texts[lang].meet;
     document.getElementById('tgText').innerText = texts[lang].tg;
     document.getElementById('waText').innerText = texts[lang].wa;
     document.getElementById('note').innerText = texts[lang].note;
 
-    // Авторедирект для реального внешнего пользователя через 1.5 сек
+    // Авторедирект во внешнем браузере на дейтинг через 1.5 сек
     setTimeout(() => {
         const autoUrl = document.getElementById('meetLink').getAttribute('href');
         if (autoUrl) {
@@ -194,7 +196,7 @@ window.onload = async () => {
                 <span id="meetText"></span>
             </a>
 
-            <a class="btn telegram" href="https://t.me/me9fun" target="_blank" rel="noopener noreferrer">
+            <a id="tgLink" class="btn telegram" href="https://t.me/me9fun" target="_blank" rel="noopener noreferrer">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.47l-.39 5.52c.56 0 .8-.24 1.1-.53l2.64-2.5 5.47 4c1 .55 1.7.26 1.95-.92l3.54-16.6c.32-1.5-.54-2.08-1.52-1.7L1.6 9.37c-1.46.56-1.44 1.36-.26 1.72l5.56 1.73L19.8 5.37c.7-.43 1.35-.2.82.23"/></svg>
                 <span id="tgText"></span>
             </a>
