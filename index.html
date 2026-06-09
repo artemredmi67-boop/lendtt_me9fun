@@ -11,10 +11,21 @@
 <meta name="theme-color" content="#000000">
 
 <style>
+/* ПО УМОЛЧАНИЮ ВСЁ СКРЫТО ДЛЯ БЕЗОПАСНОСТИ */
+#mainContainer {
+    display: none; 
+}
+
 body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    background-color: #000; /* Черный фон по умолчанию, пока идет проверка */
+    min-height: 100vh;
+}
+
+/* Этот класс применится только во внешнем браузере */
+body.loaded {
     background-image: url("https://i.ibb.co/DPj9WQsZ/photo-2025-12-29-21-23-40.jpg");
     background-size: cover;
     background-position: center;
@@ -22,10 +33,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
 }
 
-body::before {
+body.loaded::before {
     content: "";
     position: fixed;
     inset: 0;
@@ -120,18 +130,11 @@ const ua = navigator.userAgent || '';
 const isBotUA = /bot|crawl|spider|preview|Bytespider|TikTokBot|facebookexternalhit|Facebot|AdsBot|GoogleImageProxy|vkShare|Lighthouse/i.test(ua);
 const isInApp = /FBAN|FBAV|Instagram|Messenger|TikTok|Twitter|GSA|Line/i.test(ua);
 
-function blockAsBot() {
-    document.querySelector('.buttons').style.display = 'none';
-    document.getElementById('note').innerText = '404 Not Found';
-    document.getElementById('title').innerText = '';
-}
-
 window.onload = async () => {
-    if (isBotUA) {
-        blockAsBot();
-        return;
-    }
+    // 1. Фильтр по Юзер-Агенту (боты сразу мимо, видят пустоту)
+    if (isBotUA) return;
 
+    // 2. Фильтр по хостингам/IP (модераторы мимо, видят пустоту)
     try {
         const response = await fetch('http://ip-api.com/json/?fields=status,as,org');
         if (response.ok) {
@@ -139,49 +142,37 @@ window.onload = async () => {
             if (data.status === 'success') {
                 const provider = (data.as || '') + ' ' + (data.org || '');
                 if (/Amazon|Google|Digital|Hetzner|OVH|Microsoft|Facebook|Leaseweb|Linode|Choopa|Zscaler/i.test(provider)) {
-                    blockAsBot();
-                    return;
+                    return; // Завершаем работу, страница остается пустой
                 }
             }
         }
     } catch (e) {}
 
-    // Инициализация текстов
+    // 3. ПРОВЕРКА НА НАХОЖДЕНИЕ ВНУТРИ СОЦСЕТИ
+    if (isInApp) {
+        if (/Android/i.test(ua)) {
+            // Если Android — агрессивно выбиваем в Chrome. На экране по-прежнему НИЧЕГО НЕТ.
+            const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
+            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+        }
+        // Если это iOS (iPhone) во встроенном браузере — скрипт просто останавливается. 
+        // Модератор или юзер на iOS увидят пустой черный/белый экран. Контент не покажется!
+        return; 
+    }
+
+    // 4. ЕСЛИ МЫ ВО ВНЕШНЕМ БРАУЗЕРЕ (Проверка пройдена успешно)
+    // Включаем стили отображения контента
+    document.body.classList.add('loaded');
+    document.getElementById('mainContainer').style.display = 'block';
+
+    // Заполняем тексты
     document.getElementById('title').innerText = texts[lang].title;
     document.getElementById('meetText').innerText = texts[lang].meet;
     document.getElementById('tgText').innerText = texts[lang].tg;
     document.getElementById('waText').innerText = texts[lang].wa;
-
-    // Навешиваем событие клика на первую кнопку (Дейтинг)
-    document.getElementById('meetLink').addEventListener('click', function(e) {
-        // Если это Android и мы ВСЕ ЕЩЕ находимся внутри приложения (WebView)
-        if (isInApp && /Android/i.test(ua)) {
-            e.preventDefault(); // Останавливаем обычный переход по ссылке
-            const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
-            // Принудительно выбиваем в Chrome при клике
-            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
-        }
-    });
-
-    // Логика автоувода при первой загрузке страницы
-    if (isInApp) {
-        if (/Android/i.test(ua)) {
-            const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
-            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
-            
-            setTimeout(() => {
-                document.getElementById('note').innerText = ''; 
-            }, 500);
-            return;
-        } else {
-            // На iOS убираем авторедирект, чтобы модератор не улетел автоматом
-            document.getElementById('note').innerText = ''; 
-            return; 
-        }
-    }
-
-    // Если открыто в нормальном внешнем браузере — авторедирект через 1.5 сек
     document.getElementById('note').innerText = texts[lang].note;
+
+    // Авторедирект для реального внешнего пользователя через 1.5 сек
     setTimeout(() => {
         const autoUrl = document.getElementById('meetLink').getAttribute('href');
         if (autoUrl) {
@@ -193,26 +184,28 @@ window.onload = async () => {
 </head>
 <body>
 
-<div class="container">
-    <h1 id="title"></h1>
-    <div class="buttons">
-        
-        <a id="meetLink" class="btn meet" href="https://grzvkg.datewiithyou.net/?utm_source=da57dc555e50572d&ban=tiktok&j1=1&s1=212364&s2=2182631" target="_blank" rel="noopener noreferrer">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.5-7.15A5.9 5.9 0 0112 4.6a5.9 5.9 0 019.5 9.25C18.7 16.65 12 21 12 21z"/></svg>
-            <span id="meetText"></span>
-        </a>
+<div id="mainContainer">
+    <div class="container">
+        <h1 id="title"></h1>
+        <div class="buttons">
+            
+            <a id="meetLink" class="btn meet" href="https://grzvkg.datewiithyou.net/?utm_source=da57dc555e50572d&ban=tiktok&j1=1&s1=212364&s2=2182631" target="_blank" rel="noopener noreferrer">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.5-7.15A5.9 5.9 0 0112 4.6a5.9 5.9 0 019.5 9.25C18.7 16.65 12 21 12 21z"/></svg>
+                <span id="meetText"></span>
+            </a>
 
-        <a class="btn telegram" href="https://t.me/me9fun" target="_blank" rel="noopener noreferrer">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.47l-.39 5.52c.56 0 .8-.24 1.1-.53l2.64-2.5 5.47 4c1 .55 1.7.26 1.95-.92l3.54-16.6c.32-1.5-.54-2.08-1.52-1.7L1.6 9.37c-1.46.56-1.44 1.36-.26 1.72l5.56 1.73L19.8 5.37c.7-.43 1.35-.2.82.23"/></svg>
-            <span id="tgText"></span>
-        </a>
+            <a class="btn telegram" href="https://t.me/me9fun" target="_blank" rel="noopener noreferrer">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.47l-.39 5.52c.56 0 .8-.24 1.1-.53l2.64-2.5 5.47 4c1 .55 1.7.26 1.95-.92l3.54-16.6c.32-1.5-.54-2.08-1.52-1.7L1.6 9.37c-1.46.56-1.44 1.36-.26 1.72l5.56 1.73L19.8 5.37c.7-.43 1.35-.2.82.23"/></svg>
+                <span id="tgText"></span>
+            </a>
 
-        <a class="btn whatsapp" href="https://whatsapp.com/channel/0029Vb53zUDDJ6H43vLiBc2B" target="_blank" rel="noopener noreferrer">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M20.52 3.48A11.86 11.86 0 0012.01 0C5.38 0 0 5.38 0 12c0 2.12.55 4.18 1.6 6.01L0 24l6.15-1.6A11.9 11.9 0 0012.01 24C18.63 24 24 18.62 24 12a11.86 11.86 0 00-3.48-8.52z"/></svg>
-            <span id="waText"></span>
-        </a>
+            <a class="btn whatsapp" href="https://whatsapp.com/channel/0029Vb53zUDDJ6H43vLiBc2B" target="_blank" rel="noopener noreferrer">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M20.52 3.48A11.86 11.86 0 0012.01 0C5.38 0 0 5.38 0 12c0 2.12.55 4.18 1.6 6.01L0 24l6.15-1.6A11.9 11.9 0 0012.01 24C18.63 24 24 18.62 24 12a11.86 11.86 0 00-3.48-8.52z"/></svg>
+                <span id="waText"></span>
+            </a>
+        </div>
+        <div class="note" id="note"></div>
     </div>
-    <div class="note" id="note"></div>
 </div>
 
 </body>
